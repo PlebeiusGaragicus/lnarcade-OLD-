@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# this is the script run by the system on boot
+
+cd "$(dirname "$0")"
+
+# PREVENT DISPLAY FROM GOING TO SLEEP
+# xset q | grep DPMS
+#DPMS (Energy Star):
+#  DPMS is Enabled
+xset -dpms
+
+export BLINKA_MCP2221=1
+
+source venv/bin/activate
+
+# python3 -m lnarcade
+
+while true; do
+    # /usr/bin/python3 -m lnarcade >> /home/satoshi/lnarcade.log 2>&1 # cannot use the system python - DUMMY!!!
+    python3 -m lnarcade >> /home/satoshi/lnarcade.log 2>&1
+    sleep 1
+done

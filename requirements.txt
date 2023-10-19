@@ -1,0 +1,9 @@
+python-dotenv
+
+pygame
+pyglet
+
+pywebio
+
+# rainbowio
+adafruit-circuitpython-seesaw
