@@ -14,7 +14,7 @@ from lnarcade.config import APP_FOLDER, MY_DIR
 from lnarcade.colors import *
 from lnarcade.utilities.find_games import get_app_manifests
 from lnarcade.view import ViewState
-# from lnarcade.view.error import ErrorModalView
+from lnarcade.view.error import ErrorModalView
 
 
 
@@ -77,10 +77,11 @@ class GameSelectView(ViewState):
 
 
     def update(self):
-        pass
         # simulate keypress
-        # if time.time() - self.last_input_time > int(os.getenv("AFK_SCROLL_TIME", 300)):
-            # self.on_key_press(arcade.key.DOWN, 0)
+        if time.time() - self.last_input_time > int(os.getenv("AFK_SCROLL_TIME", 300)):
+            # TODO: untested
+            key_down_event = pygame.event.Event(pygame.KEYDOWN, {'key': pygame.K_DOWN})
+            pygame.event.post(key_down_event)
 
 
     def draw(self):
@@ -106,18 +107,16 @@ class GameSelectView(ViewState):
 
 
         # Drawing Texts
-        font_30 = pygame.font.SysFont(None, 30)
-        font_45 = pygame.font.SysFont(None, 45)
+        font_30 = pygame.font.SysFont(None, 50)
+        font_45 = pygame.font.SysFont(None, 80)
         x, y = SCREEN_WIDTH * 0.02, SCREEN_HEIGHT // 2
         offset = y + self.selected_index * 55
 
 
         for i, menu_item in enumerate(self.menu_items):
             color = (173, 173, 239)  # arcade.color.BLUE_BELL
-            menu_item_size = 30
             if i == self.selected_index:
                 color = (255, 255, 255)  # arcade.color.WHITE
-                menu_item_size = 45
                 text = font_45.render(menu_item.game_name, True, color)
             else:
                 text = font_30.render(menu_item.game_name, True, color)
@@ -134,7 +133,7 @@ class GameSelectView(ViewState):
 
 
 
-        # self.flash_free_play()
+        self.flash_free_play()
         # self.show_configuration()
 
         # SHOW MOUSE POSITION
@@ -142,82 +141,44 @@ class GameSelectView(ViewState):
             # self.show_mouse_position()
 
 
-    def on_key_press(self, symbol: int, modifiers: int):
+    def handle_event(self, event):
         self.last_input_time = time.time()
 
-        if symbol == arcade.key.UP:
-            self.selected_index = (self.selected_index - 1) % len(self.menu_items)
-        elif symbol == arcade.key.DOWN:
-            self.selected_index = (self.selected_index + 1) % len(self.menu_items)
-        
-        elif symbol == arcade.key.A:
-            self.A_held = True
-        elif symbol == arcade.key.B:
-            self.show_mouse_pos = not self.show_mouse_pos
+        if event.type == pygame.KEYDOWN:
 
-        # QUIT
-        elif symbol == arcade.key.ESCAPE:
-            arcade.Window.close( GAME_WINDOW )
-            exit(0)
-
-        # elif symbol == arcade.key.TAB:
-        #     if self.process is not None:
-        #         # self.process.kill()
-        #         self.process.terminate()
-        #         self.process = None
-
-        # LAUNCH APP
-        elif symbol == arcade.key.ENTER:
-            selected_app = self.menu_items[self.selected_index].module_name
-            logger.debug("Launching python module: %s", selected_app)
-
-
-            # check for sufficient 'coins'
-            logger.debug("Checking for sufficient coins")
-            if not os.getenv("FREE_PLAY", False):
-                # toast("Excuse me... YOU NEED TO PAY UP!!") #TODO
-                logger.error("You don't have enough coins")
-                return
-
-
-            # doesn't do anything...?  Is it because I'm no in a draw loop or something????
-            # arcade.set_background_color(arcade.color.BLACK)
-            # arcade.start_render()
+            # QUIT
+            if event.key == pygame.K_ESCAPE:
+                App.get_instance().stop()
             
-            # DEPRECATED:
-            # if FULLSCREEN:
-                # self.window.set_fullscreen(False)
-            # self.window.set_visible(False) # doesn't do anything...?
-            # self.window.minimize()
+            # LAUNCH APP
+            elif event.key == pygame.K_RETURN:
+                self.launch()
 
-            args = ["python3", "-m", selected_app]
-            cwd = os.path.expanduser(f"~/{APP_FOLDER}")
-            logger.debug(f"subprocess.run({args=}, {cwd=})")
-            # ret_code = subprocess.run(args, cwd=cwd).returncode # This is a blocking call - wait for game to run and exit
+            elif event.key == pygame.K_UP:
+                self.selected_index = (self.selected_index + 1) % len(self.menu_items)
+            elif event.key == pygame.K_DOWN:
+                self.selected_index = (self.selected_index - 1) % len(self.menu_items)
 
-            # self.process = subprocess.Popen(args, cwd=cwd)
-            App.get_instance().process = subprocess.Popen(args, cwd=cwd)
+            # show IP address
+            elif event.key == pygame.K_a:
+                self.A_held = True
 
-            # if ret_code != 0:
-            #     logger.error(f"app '{selected_app}' returned non-zero! {ret_code=}")
-            #     self.window.show_view( ErrorModalView("App crashed!", self) )
+            # toggle mouse coordinates
+            elif event.key == pygame.K_b:
+                self.show_mouse_pos = not self.show_mouse_pos
 
-            # arcade.set_background_color(arcade.color.BLACK)
-            # self.window.set_visible(True) # doesn't do anything...?
-            # self.window.maximize()
+        elif event.type == pygame.KEYUP:
 
-            # DEPRECATED:
-            # if FULLSCREEN:
-            #     self.window.set_fullscreen(True)
-
-    def on_key_release(self, key: int, modifiers: int):
-        if key == arcade.key.A:
-            self.A_held = False
+            if event.key == pygame.K_a:
+                self.A_held = False
+        
+        elif event.type == pygame.MOUSEMOTION:
+            x, y = event.pos            # event.pos gives the new position of the mouse
+            # rel_x, rel_y = event.rel    # event.rel gives the relative motion from the last position
+            self.mouse_pos = (x, y)
+            # logger.debug(f"Mouse moved to ({x}, {y}) with relative motion ({rel_x}, {rel_y})")
 
 
-    def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
-        self.mouse_pos = (x, y)
-        # return super().on_mouse_motion(x, y, dx, dy)
     
 
     def show_mouse_position(self):
@@ -238,14 +199,64 @@ class GameSelectView(ViewState):
         arcade.draw_point(self.mouse_pos[0], self.mouse_pos[1], arcade.color.RED, 5)
 
 
+    def launch(self):
+        selected_app = self.menu_items[self.selected_index].module_name
+        logger.debug("Launching python module: %s", selected_app)
+
+        # check for sufficient 'coins'
+        logger.debug("Checking for sufficient coins")
+        if not os.getenv("FREE_PLAY", False):
+            # toast("Excuse me... YOU NEED TO PAY UP!!") #TODO
+            logger.error("You don't have enough coins")
+            return
+
+
+        # doesn't do anything...?  Is it because I'm no in a draw loop or something????
+        # arcade.set_background_color(arcade.color.BLACK)
+        # arcade.start_render()
+        
+        # DEPRECATED:
+        # if FULLSCREEN:
+            # self.window.set_fullscreen(False)
+        # self.window.set_visible(False) # doesn't do anything...?
+        # self.window.minimize()
+
+        args = ["python3", "-m", selected_app]
+        cwd = os.path.expanduser(f"~/{APP_FOLDER}")
+        logger.debug(f"subprocess.run({args=}, {cwd=})")
+        # ret_code = subprocess.run(args, cwd=cwd).returncode # This is a blocking call - wait for game to run and exit
+
+        # self.process = subprocess.Popen(args, cwd=cwd)
+        App.get_instance().process = subprocess.Popen(args, cwd=cwd)
+
+        # TODO: untested!!!!
+        ret_code = self.process.wait() # This is a blocking call - wait for game to run and exit
+
+        if ret_code != 0:
+            logger.error(f"app '{selected_app}' returned non-zero! {ret_code=}")
+            self.window.show_view( ErrorModalView("App crashed!", self) )
+
+        # arcade.set_background_color(arcade.color.BLACK)
+        # self.window.set_visible(True) # doesn't do anything...?
+        # self.window.maximize()
+
+        # DEPRECATED:
+        # if FULLSCREEN:
+        #     self.window.set_fullscreen(True)
+
+
+
     def flash_free_play(self):
+        font = pygame.font.SysFont(None, 26)
+        alpha = abs((time.time() % 2) - 1)  # calculate alpha value for fade in/out effect
+
         if os.getenv("FREE_PLAY", False):
-            # alpha = abs((time.time() % 4) - 1)  # calculate alpha value for fade in/out effect
-            alpha = abs((time.time() % 2) - 1)  # calculate alpha value for fade in/out effect
-            arcade.draw_text("FREE PLAY", 10, 10, arcade.color.GREEN + (int(alpha * 255),), font_size=26, anchor_x="left")
+            text_surface = font.render("FREE PLAY", True, pygame.Color("GREEN"))
         else:
-            alpha = abs((time.time() % 2) - 1)  # calculate alpha value for fade in/out effect
-            arcade.draw_text(f"CREDITS: {self.credits}", 10, 10, arcade.color.RED + (int(alpha * 255),), font_size=26, anchor_x="left")
+            text_surface = font.render(f"CREDITS: {self.credits}", True, pygame.Color("RED"))  # RGB tuple for RED
+
+        text_surface.set_alpha(int(alpha * 255))
+        APP_SCREEN.blit(text_surface, (10, 10))
 
 
     def show_configuration(self):

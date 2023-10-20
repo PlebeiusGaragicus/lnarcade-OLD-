@@ -75,11 +75,13 @@ class App(Singleton):
         logger.debug("lnarcade installed at: %s", MY_DIR)
 
         pygame.init()
+        pygame.font.init()
         # app.width, app.height = pygame.display.get_surface().get_size()
         app.width, app.height = pygame.display.Info().current_w, pygame.display.Info().current_h
         logger.debug("Display size: %s x %s", app.width, app.height)
 
-        app.screen = pygame.display.set_mode((app.width, app.height), pygame.FULLSCREEN)
+        # app.screen = pygame.display.set_mode((app.width, app.height), pygame.FULLSCREEN) # NOTE: DON'T DO FULLSCREEN FOR THE LOVE OF GOD!!!
+        app.screen = pygame.display.set_mode((app.width, app.height))
         global APP_SCREEN
         APP_SCREEN = app.screen
         global SCREEN_WIDTH
@@ -144,6 +146,21 @@ class App(Singleton):
 
         except KeyboardInterrupt:
             logger.warning("KeyboardInterrupt")
+        
+        # except NotImplementedError:
+        #     logger.critical("NotImplementedError")
+
+        #     from lnarcade.view.error import ErrorModalView
+        #     self.manager.add_state("error", ErrorModalView("NotImplementedError", None))
+        #     self.manager.change_state("error")
+
+            # while True:
+            #     for event in pygame.event.get():
+            #         if event.type == pygame.QUIT:
+            #             running = False
+            #         self.manager.handle_event(event)
+
+            #     self.manager.draw()
 
         self.stop()
 

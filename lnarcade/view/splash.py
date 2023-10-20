@@ -27,8 +27,8 @@ class SplashScreen(ViewState):
     def __init__(self):
         super().__init__()
         self.alpha = 0  # initialize alpha to 0 (fully transparent)
-        self.player: Player = None
-        self.theme_len = 0
+        # self.player: Player = None
+        # self.theme_len = 0
 
         self.font = pygame.font.SysFont(None, FONT_SIZE)
         self.screen = APP_SCREEN
@@ -38,11 +38,11 @@ class SplashScreen(ViewState):
         self.start_time = time.time()
 
         # sound_path = os.path.join('lnarcade', 'resources', 'sounds', 'theme.wav')
-        sound_path = os.path.join(MY_DIR, 'resources', 'sounds', 'theme.wav')
-        self.player = pygame.mixer.Sound(sound_path)
-        self.theme_len = self.player.get_length()
-        self.player.play()
-        
+        # sound_path = os.path.join(MY_DIR, 'resources', 'sounds', 'theme.wav')
+        # self.player = pygame.mixer.Sound(sound_path)
+        # self.theme_len = self.player.get_length()
+        # self.player.play()
+
 
     def handle_event(self, event):
         # return super().handle_event(event)
@@ -50,16 +50,20 @@ class SplashScreen(ViewState):
 
 
     def update(self):
-        # if os.getenv("DEBUG", False):
+        from lnarcade.app import App
+        App.get_instance().manager.change_state("game_select")
+
+        # if os.getenv("DEBUG", False): # TODO: remove this
         #     logger.debug("DEBUG MODE: skipping splash screen")
+        #     # self.player.stop()
         #     from lnarcade.app import App
         #     App.get_instance().manager.change_state("game_select")
 
-        if time.time() > self.start_time + self.theme_len: # wait for theme to finish
-            self.player.stop()
+        # if time.time() > self.start_time + self.theme_len: # wait for theme to finish
+            # self.player.stop()
 
-            from lnarcade.app import App
-            App.get_instance().manager.change_state("game_select")
+            # from lnarcade.app import App
+            # App.get_instance().manager.change_state("game_select")
 
 
     def draw(self):

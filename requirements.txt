@@ -5,5 +5,11 @@ pyglet
 
 pywebio
 
-# rainbowio
+pyftdi
 adafruit-circuitpython-seesaw
+adafruit-blinka
+adafruit-circuitpython-lis3dh
+
+# NO SUCH PACKAGE
+# rainbowio
+# adafruit-circuitpython-rotaryio
