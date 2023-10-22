@@ -140,6 +140,8 @@ class GameSelectView(ViewState):
         # if os.getenv("DEBUG", False):
             # self.show_mouse_position()
 
+        pygame.display.flip()
+
 
     def handle_event(self, event):
         self.last_input_time = time.time()

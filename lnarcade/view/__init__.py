@@ -11,7 +11,7 @@ class ViewState:
     def update(self):
         raise NotImplementedError(f"update() not implemented in {self.__class__.__name__} class")
 
-    def draw(self, screen):
+    def draw(self):
         raise NotImplementedError(f"draw() not implemented in {self.__class__.__name__} class")
 
 

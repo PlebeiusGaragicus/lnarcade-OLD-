@@ -1,6 +1,12 @@
+"""
+export BLINKA_FT232H=1
+"""
+
+
 import os
 import time
 import board
+import subprocess
 from rainbowio import colorwheel
 from adafruit_seesaw import seesaw, neopixel, rotaryio, digitalio
 import adafruit_character_lcd.character_lcd_i2c as character_lcd
@@ -28,7 +34,7 @@ lcd.cursor = True
 
 credits = 0
 
-lcd.message = f"Credits: {credits}"
+# lcd.message = f"Credits: {credits}"
 
 # C = [14,27,24,24,24,27,14,0]
 # R = [15,25,25,15,11,11,25,0]
@@ -47,6 +53,10 @@ lcd.message = f"Credits: {credits}"
 # lcd.create_char(6, S)
 
 print("done creating chars")
+
+dink = "aplay /home/satoshi/lnarcade/lnarcade/resources/sounds/dink.wav"
+# dink = "/usr/bin/aplay /home/satoshi/lnarcade/lnarcade/resources/sounds/dink.wav"
+
 
 encoder = rotaryio.IncrementalEncoder(seesaw)
 seesaw.pin_mode(24, seesaw.INPUT_PULLUP)
@@ -84,6 +94,13 @@ while True:
         v = f"amixer set 'Master' -- {current_volume}%"
         print(v)
         print(os.system( v ))
+        # ch = subprocess.Popen( v )
+
+        os.system( dink )
+        # proc = subprocess.Popen( dink )
+
+
+
         # lcd.clear()
         # lcd.message = f"{current_volume}"
 

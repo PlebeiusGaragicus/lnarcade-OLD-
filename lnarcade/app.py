@@ -1,4 +1,5 @@
 import os
+import platform
 import threading
 import subprocess
 import dotenv
@@ -49,7 +50,7 @@ class App(Singleton):
 
 
     @classmethod
-    def configure_instance(cls, disable_hardware=False):
+    def configure_instance(cls):
 
         if cls._instance:
             raise Exception("Instance already configured")
@@ -74,20 +75,27 @@ class App(Singleton):
         logger.debug("Configuring application instance...")
         logger.debug("lnarcade installed at: %s", MY_DIR)
 
-        pygame.init()
+        ret = pygame.init()
+        logger.debug("pygame.init() returned: %s", ret)
+
         pygame.font.init()
         # app.width, app.height = pygame.display.get_surface().get_size()
-        app.width, app.height = pygame.display.Info().current_w, pygame.display.Info().current_h
+        # app.width, app.height = pygame.display.Info().current_w, pygame.display.Info().current_h
+        _vid_info = pygame.display.Info()
+        app.width, app.height = _vid_info.current_w, _vid_info.current_h
+
         logger.debug("Display size: %s x %s", app.width, app.height)
 
-        # app.screen = pygame.display.set_mode((app.width, app.height), pygame.FULLSCREEN) # NOTE: DON'T DO FULLSCREEN FOR THE LOVE OF GOD!!!
-        app.screen = pygame.display.set_mode((app.width, app.height))
+        # NOTE: DON'T DO FULLSCREEN FOR THE LOVE OF GOD!!!
+        # app.screen = pygame.display.set_mode((app.width, app.height))
+        app.screen = pygame.display.set_mode((app.width, app.height), pygame.FULLSCREEN)
+
         global APP_SCREEN
         APP_SCREEN = app.screen
         global SCREEN_WIDTH
-        SCREEN_WIDTH = app.width
+        SCREEN_WIDTH = app.screen.get_width()
         global SCREEN_HEIGHT
-        SCREEN_HEIGHT = app.height
+        SCREEN_HEIGHT = app.screen.get_height()
 
         pygame.display.set_caption("Lightning Arcade")
         pygame.mouse.set_visible(False)
@@ -105,10 +113,13 @@ class App(Singleton):
 
 
         ### SETUP 'HELPER' THREADS ###
-        from lnarcade.control.controlmanager import ControlManager
-        app.controlmanager = ControlManager()
-        app.control_thread = threading.Thread(target=app.controlmanager.run)
-        app.control_thread.daemon = True # this is needed so that when the main process exits the control thread will also exit
+        if platform.system() != 'Darwin':
+            from lnarcade.control.controlmanager import ControlManager
+            app.controlmanager = ControlManager()
+            app.control_thread = threading.Thread(target=app.controlmanager.run)
+            app.control_thread.daemon = True # this is needed so that when the main process exits the control thread will also exit
+        else:
+            app.controlmanager = None
 
         from lnarcade.backend.server import ArcadeServerPage
         app.backend = ArcadeServerPage( DOT_ENV_PATH )
@@ -121,19 +132,25 @@ class App(Singleton):
     def start(self):
         logger.debug("App.get_instance().start()")
 
-        self.control_thread.start()
+        logger.debug("starting the backend thread")
         self.backend_thread.start()
 
-        # from lnarcade.views.splash_screen import SplashScreen
-        # view = SplashScreen()
-        # self.window.show_view(view)
+        if self.controlmanager is not None:
+            logger.debug("starting the control thread")
+            self.control_thread.start()
+        else:
+            logger.debug("skipping the control thread (becuase we're on MacOS))")
+
         self.manager.change_state("splash")
+        # self.manager.change_state("game_select")
 
         try:
             running = True
             while running:
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
+                        running = False
+                    if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                         running = False
                     self.manager.handle_event(event)
 
@@ -187,9 +204,12 @@ class App(Singleton):
 
     # def stop(self, force: bool = False):
     def stop(self):
-        logger.debug("App.get_instance().stop()")
+        logger.debug("App.get_instance().stop(): quitting pygame and joining threads...")
         pygame.quit()
-        self.control_thread.join(0.1)
+        if self.controlmanager is not None:
+            self.control_thread.join(0.1)
+            # self.controlmanager.stop() # TODO stop or join:
+
         self.backend_thread.join(0.1)
-        logger.debug("App.get_instance().stop() - END")
+        logger.debug("App.get_instance().stop() - DONE - END")
         exit(0)

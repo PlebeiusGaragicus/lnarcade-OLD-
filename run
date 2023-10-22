@@ -2,15 +2,16 @@
 
 # this is the script run by the system on boot
 
-cd "$(dirname "$0")"
+# cd "$(dirname "$0")"
 
 # PREVENT DISPLAY FROM GOING TO SLEEP
 # xset q | grep DPMS
 #DPMS (Energy Star):
 #  DPMS is Enabled
-xset -dpms
+# xset -dpms
 
-export BLINKA_MCP2221=1
+# export BLINKA_MCP2221=1
+export BLINKA_FT232H=1
 
 source venv/bin/activate
 
