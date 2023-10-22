@@ -39,7 +39,7 @@ class GameListItem:
 class GameSelectView(ViewState):
     def __init__(self):
         super().__init__()
-        self.screen = APP_SCREEN
+        # self.screen = APP_SCREEN
         self.alpha = 0  # initialize alpha to 0 (fully transparent)
         self.mouse_pos = (0, 0)
         self.selected_index = 0
@@ -69,7 +69,7 @@ class GameSelectView(ViewState):
 
     def setup(self):
         # arcade.set_background_color(arcade.color.BLACK)
-        self.screen.fill(BLACK)
+        APP_SCREEN.fill(BLACK)
 
         # TODO - clean this up...
         if self.menu_items == []:
@@ -88,7 +88,7 @@ class GameSelectView(ViewState):
         # SHOW GAME ARTWORK
         image = self.menu_items[self.selected_index].image
         scaled_image = pygame.transform.scale(image, (SCREEN_WIDTH, SCREEN_HEIGHT))
-        self.screen.blit(scaled_image, (0, 0))  # Drawing the image
+        APP_SCREEN.blit(scaled_image, (0, 0))  # Drawing the image
 
         # Define the coordinates for the gradient effect.
         left = 0
@@ -103,7 +103,7 @@ class GameSelectView(ViewState):
             alpha = int(255 * gradient_strength * ((SCREEN_WIDTH // 2 - i) / (SCREEN_WIDTH // 2)))
             gradient_surface = pygame.Surface((gradient_rect_width, SCREEN_HEIGHT), pygame.SRCALPHA)
             gradient_surface.fill((0, 0, 0, alpha))
-            self.screen.blit(gradient_surface, (i, 0))
+            APP_SCREEN.blit(gradient_surface, (i, 0))
 
 
         # Drawing Texts
@@ -121,13 +121,13 @@ class GameSelectView(ViewState):
             else:
                 text = font_30.render(menu_item.game_name, True, color)
 
-            self.screen.blit(text, (x, offset - i * 55))
+            APP_SCREEN.blit(text, (x, offset - i * 55))
 
         # Drawing game type
         try:
             game_type = self.menu_items[self.selected_index].manifest_dict["type"]
             text = font_30.render(game_type, True, (255, 0, 0))  # arcade.color.RED
-            self.screen.blit(text, (SCREEN_WIDTH * 0.5, SCREEN_HEIGHT * 0.05))
+            APP_SCREEN.blit(text, (SCREEN_WIDTH * 0.5, SCREEN_HEIGHT * 0.05))
         except KeyError:
             pass
 
@@ -226,17 +226,19 @@ class GameSelectView(ViewState):
         args = ["python3", "-m", selected_app]
         cwd = os.path.expanduser(f"~/{APP_FOLDER}")
         logger.debug(f"subprocess.run({args=}, {cwd=})")
-        # ret_code = subprocess.run(args, cwd=cwd).returncode # This is a blocking call - wait for game to run and exit
+
+        # pygame.display.toggle_fullscreen()
+        ret_code = subprocess.run(args, cwd=cwd).returncode # This is a blocking call - wait for game to run and exit
 
         # self.process = subprocess.Popen(args, cwd=cwd)
-        App.get_instance().process = subprocess.Popen(args, cwd=cwd)
-
-        # TODO: untested!!!!
-        ret_code = self.process.wait() # This is a blocking call - wait for game to run and exit
+        # App.get_instance().process = subprocess.Popen(args, cwd=cwd)
+        # # This is a blocking call - wait for game to run and exit
+        # ret_code = self.process.wait()
 
         if ret_code != 0:
             logger.error(f"app '{selected_app}' returned non-zero! {ret_code=}")
-            self.window.show_view( ErrorModalView("App crashed!", self) )
+            # TODO - show error modal here
+            # self.window.show_view( ErrorModalView("App crashed!", self) )
 
         # arcade.set_background_color(arcade.color.BLACK)
         # self.window.set_visible(True) # doesn't do anything...?
@@ -245,6 +247,8 @@ class GameSelectView(ViewState):
         # DEPRECATED:
         # if FULLSCREEN:
         #     self.window.set_fullscreen(True)
+        # pygame.init()
+        # pygame.display.toggle_fullscreen()
 
 
 

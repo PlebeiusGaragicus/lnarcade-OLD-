@@ -78,7 +78,7 @@ class App(Singleton):
         ret = pygame.init()
         logger.debug("pygame.init() returned: %s", ret)
 
-        pygame.font.init()
+        # pygame.font.init()
         # app.width, app.height = pygame.display.get_surface().get_size()
         # app.width, app.height = pygame.display.Info().current_w, pygame.display.Info().current_h
         _vid_info = pygame.display.Info()
@@ -87,8 +87,9 @@ class App(Singleton):
         logger.debug("Display size: %s x %s", app.width, app.height)
 
         # NOTE: DON'T DO FULLSCREEN FOR THE LOVE OF GOD!!!
-        # app.screen = pygame.display.set_mode((app.width, app.height))
-        app.screen = pygame.display.set_mode((app.width, app.height), pygame.FULLSCREEN)
+        app.screen = pygame.display.set_mode((app.width, app.height), flags=pygame.NOFRAME)
+        # app.screen = pygame.display.set_mode((app.width, app.height), pygame.FULLSCREEN)
+        # app.screen = pygame.display.set_mode(flags=pygame.FULLSCREEN)
 
         global APP_SCREEN
         APP_SCREEN = app.screen
@@ -99,6 +100,8 @@ class App(Singleton):
 
         pygame.display.set_caption("Lightning Arcade")
         pygame.mouse.set_visible(False)
+
+        app.process = None
 
         app.clock = pygame.time.Clock()
 
@@ -113,18 +116,20 @@ class App(Singleton):
 
 
         ### SETUP 'HELPER' THREADS ###
-        if platform.system() != 'Darwin':
-            from lnarcade.control.controlmanager import ControlManager
-            app.controlmanager = ControlManager()
-            app.control_thread = threading.Thread(target=app.controlmanager.run)
-            app.control_thread.daemon = True # this is needed so that when the main process exits the control thread will also exit
-        else:
-            app.controlmanager = None
+        # if platform.system() != 'Darwin':
+        #     from lnarcade.control.controlmanager import ControlManager
+        #     app.controlmanager = ControlManager()
+        #     app.control_thread = threading.Thread(target=app.controlmanager.run)
+        #     app.control_thread.daemon = True # this is needed so that when the main process exits the control thread will also exit
+        # else:
+        #     app.controlmanager = None
+        app.controlmanager = None
 
-        from lnarcade.backend.server import ArcadeServerPage
-        app.backend = ArcadeServerPage( DOT_ENV_PATH )
-        app.backend_thread = threading.Thread(target=app.backend.start_server)
-        app.backend_thread.daemon = True
+        # from lnarcade.backend.server import ArcadeServerPage
+        # app.backend = ArcadeServerPage( DOT_ENV_PATH )
+        # app.backend_thread = threading.Thread(target=app.backend.start_server)
+        # app.backend_thread.daemon = True
+        app.backend_thread = None
 
         return cls._instance
 
@@ -132,14 +137,19 @@ class App(Singleton):
     def start(self):
         logger.debug("App.get_instance().start()")
 
-        logger.debug("starting the backend thread")
-        self.backend_thread.start()
 
         if self.controlmanager is not None:
             logger.debug("starting the control thread")
             self.control_thread.start()
         else:
             logger.debug("skipping the control thread (becuase we're on MacOS))")
+
+        if self.backend_thread is not None:
+            logger.debug("starting the backend thread")
+            self.backend_thread.start()
+        else:
+            logger.debug("skipping the backend thread)")
+
 
         self.manager.change_state("splash")
         # self.manager.change_state("game_select")
@@ -210,6 +220,9 @@ class App(Singleton):
             self.control_thread.join(0.1)
             # self.controlmanager.stop() # TODO stop or join:
 
-        self.backend_thread.join(0.1)
+        if self.backend_thread is not None:
+            self.backend_thread.join(0.1)
+            # self.backend.stop() # TODO stop or join:
+
         logger.debug("App.get_instance().stop() - DONE - END")
         exit(0)
